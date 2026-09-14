@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コミュニケーションタイプ診断</title>
+<style>
+  :root {
+    --bg: #14161c;
+    --surface: #1d2029;
+    --surface-2: #262a35;
+    --text: #ecebe6;
+    --text-dim: #9aa0af;
+    --line: #333846;
+
+    --c-imaginer: #6c8ebf;
+    --c-harmonizer: #cf7c8a;
+    --c-thinker: #4fa392;
+    --c-persister: #c99a3e;
+    --c-rebel: #d97a3f;
+    --c-promoter: #c0524a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Segoe UI", sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 60px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 460px;
+  }
+
+  h1 {
+    font-family: Georgia, "Hiragino Mincho ProN", serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    margin: 4px 0 6px;
+  }
+
+  .lede {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--text);
+    transition: width 0.35s ease;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px 22px;
+  }
+
+  .q-count {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .q-text {
+    font-size: 15px;
+    margin-bottom: 18px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .option-card {
+    text-align: left;
+    padding: 16px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 14.5px;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+    width: 100%;
+    font-family: inherit;
+  }
+  .option-card:hover { border-color: var(--text-dim); }
+  .option-card:active { transform: scale(0.99); }
+  .option-card.chosen {
+    border-color: var(--text);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--text);
+  }
+  .or-label {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 4px;
+    font-family: inherit;
+  }
+  .nav button:disabled { opacity: 0.3; cursor: default; }
+  .nav button:not(:disabled):hover { color: var(--text); }
+
+  /* Result screen */
+  .result-title {
+    font-family: Georgia, serif;
+    font-size: 26px;
+    margin: 4px 0 4px;
+  }
+  .result-sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 26px;
+  }
+
+  .bars {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 30px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 88px 1fr 34px;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .bar-label { color: var(--text-dim); }
+  .bar-label.top { color: var(--text); font-weight: 600; }
+  .bar-track {
+    height: 10px;
+    background: var(--surface-2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.6s ease;
+  }
+  .bar-val { text-align: right; color: var(--text-dim); }
+
+  .detail-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent, var(--text));
+    border-radius: 10px;
+    padding: 22px 20px;
+    margin-bottom: 16px;
+  }
+  .detail-card h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+  }
+  .detail-card .tag {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+  .detail-card dl {
+    margin: 0;
+    font-size: 14px;
+  }
+  .detail-card dt {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  .detail-card dt:first-child { margin-top: 0; }
+  .detail-card dd {
+    margin: 3px 0 0;
+  }
+
+  .section-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 16px 0 6px;
+  }
+
+  .detail-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+  }
+  .detail-list li {
+    margin-bottom: 5px;
+  }
+  .detail-list.do li::marker { color: var(--accent, var(--text)); }
+  .detail-list.dont li { color: var(--text-dim); }
+
+  .case-study {
+    font-size: 13.5px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 0;
+  }
+
+  .channel-detail {
+    font-size: 13.5px;
+    margin: 0 0 10px;
+  }
+
+  .detail-list.example li {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+
+  .stage-block {
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .stage-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .stage-desc {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .stage-sub {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin: 8px 0 3px;
+  }
+
+  .role-block {
+    font-size: 13.5px;
+  }
+  .role-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  .restart {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .restart:hover { border-color: var(--text-dim); }
+
+  .report-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .report-actions button {
+    flex: 1;
+    padding: 12px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .report-actions button:hover { border-color: var(--text-dim); }
+
+  .report-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .report-meta label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .report-meta input {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    min-width: 160px;
+  }
+  .print-only-meta { display: none; }
+
+  @media print {
+    body { background: #fff; color: #1a1a1a; padding: 0; }
+    .app { max-width: 100%; }
+    .report-actions, .restart, .progress-track { display: none !important; }
+    .report-meta input { display: none; }
+    .print-only-meta { display: block !important; color: #333; margin-bottom: 4px; }
+    .detail-card, .bars {
+      background: #fff;
+      border-color: #ddd;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .bar-track, .stage-block, .case-study {
+      background: #f3f3f3;
+    }
+    .result-sub, .tag, .bar-label, .section-label, .stage-desc, .stage-sub, .role-note, .lede {
+      color: #555;
+    }
+    h1, .result-title, h3 { color: #111; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ---------- Type content ---------- */
+const TYPES = {
+  imaginer: {
+    name: "想像者(イマジナー)",
+    color: "var(--c-imaginer)",
+    need: "一人の時間・静かな環境",
+    channel: "指示的",
+    channelDetail: "イマジナーは自分から「こうしたい」を発信するのが苦手なタイプ。曖昧な問いかけ(「どうしたい?」)は負担になりやすく、代わりに具体的な行動を一つずつ示す「指示的」な伝え方が最も届きやすい。声のトーンは穏やかで、静かに、簡潔に。",
+    channelExamples: [
+      "◯「まずこの資料の3ページ目だけ、見てもらえますか」",
+      "◯「今日中にこの1点だけ確認してほしい」",
+      "×「何かあれば言ってね」(反応を待つだけの声かけ)",
+      "×「みんなでブレストしよう」(即興での発言を求める)"
+    ],
+    strengths: "深い集中力、独創的な発想、落ち着いた思考力。急かされない環境では、他の人が気づかない視点を生み出す。",
+    role: "研究・分析・設計・監査・データサイエンスなど、一人で深く考える専門職に向きやすい。管理職としては、次に何をすべきかの判断材料と静かに考える時間の両方を確保できる環境であれば力を発揮しやすいが、常時人前での即応やマルチタスクの陣頭指揮を求められるポジションは負担になりやすい。",
+    glasserNeed: "自由(干渉されない自律性)",
+    qualityWorldQuestions: [
+      "誰にも邪魔されず、自分のペースでやり切れた仕事は最近ありましたか?",
+      "一人の時間が十分に取れていると感じるのはどんな時ですか?"
+    ],
+    stages: [
+      {
+        level: "第一度(軽度)",
+        desc: "反応が薄くなり、必要最低限しか話さなくなる",
+        good: [
+          "静かに作業できる時間・場所をさりげなく確保する",
+          "「この1点だけ」と具体的なタスクを一つ渡す",
+          "1対1で、短く簡潔に声をかける"
+        ],
+        bad: [
+          "「どうした?」と曖昧に聞いて反応を待つ",
+          "大勢の前で急に発言を求める",
+          "会話を長引かせて説明を重ねる"
+        ]
+      },
+      {
+        level: "第二度(中度)",
+        desc: "会議で発言せず、指示を待つばかりで自分から動かなくなる",
+        good: [
+          "「まずここだけ」と行動の起点を明確に示す",
+          "文章やチャットなど、考える時間を取れる手段でやり取りする",
+          "評価や期待は、静かな環境で1対1で伝える"
+        ],
+        bad: [
+          "「なぜ動かないのか」と問い詰める",
+          "他のメンバーの前で比較して急かす",
+          "即答や即断を求める"
+        ]
+      },
+      {
+        level: "第三度(重度)",
+        desc: "完全に引きこもり、連絡そのものが減る",
+        good: [
+          "詮索せず、負担のない頻度で短い声かけを続ける",
+          "業務量や環境そのものを一時的に調整する",
+          "必要であれば専門家(産業医等)への相談を促す"
+        ],
+        bad: [
+          "無理に人と接触させようとする",
+          "「早く戻ってきて」とプレッシャーをかける",
+          "放置して連絡を絶やす"
+        ]
+      }
+    ],
+    caseStudy: "エンジニアのAさんは普段から物静かで、一人で設計を練るのが得意。ある時期からチャットの返信が遅くなり、朝会でも「特にありません」としか言わなくなった。上司が「調子どう?」と聞いても「大丈夫です」としか返ってこない。そこで上司は雑談を減らし、代わりに「まずこの1機能の設計だけ、今日中にラフ案を作ってみてください」と具体的なタスクを一つだけ渡し、成果物についてチャットで簡潔にフィードバックするようにした。数日で少しずつ発言が戻り始めた。"
+  },
+  harmonizer: {
+    name: "直感者(ハーモナイザー)",
+    color: "var(--c-harmonizer)",
+    need: "他者からの承認・安心できる関係性",
+    channel: "養育的",
+    channelDetail: "ハーモナイザーにとっては「何を言われたか」より「どんな気持ちで言われたか」が重要。事実だけを淡々と伝えるより、まず気にかける姿勢を見せる「養育的」な伝え方が響く。指摘は必ず、承認とセットで、温かいトーンで行う。",
+    channelExamples: [
+      "◯「最近大変そうだけど、無理してない?」",
+      "◯「〇〇さんのおかげで助かってるよ、その上で一つ相談なんだけど」",
+      "×「ここ間違ってるから直して」(いきなり指摘のみ)",
+      "×「みんなできてることだから」(他者と比較する)"
+    ],
+    strengths: "高い共感力、思いやり、チームの雰囲気を和ませる力。人の気持ちを汲み取るのが得意で、周囲から信頼されやすい。",
+    role: "人事、カスタマーサクセス、教育・育成、チームの調整役など対人関係の質が評価される役割に向きやすい。組織内では、心理的安全性をつくる潤滑油としての役割を担いやすいが、数字だけで評価される厳しいノルマ環境や、人間関係を犠牲にした意思決定を常に求められるポジションはストレスになりやすい。",
+    glasserNeed: "愛と所属",
+    qualityWorldQuestions: [
+      "最近、誰かの役に立てたと感じた瞬間はありましたか?",
+      "安心して本音を話せる相手は、職場にいますか?"
+    ],
+    stages: [
+      {
+        level: "第一度(軽度)",
+        desc: "「私がやります」と抱え込みすぎる、断れなくなる",
+        good: [
+          "「無理しなくていいよ」と先に伝える",
+          "抱えている仕事の一部を一緒に整理する",
+          "小さな貢献にも具体的に感謝を伝える"
+        ],
+        bad: [
+          "「頼りにしてるから」とさらに仕事を増やす",
+          "断らないことを当然のように扱う",
+          "感謝を言葉にせず、結果だけを見る"
+        ]
+      },
+      {
+        level: "第二度(中度)",
+        desc: "「私なんて役に立ってない」と自己否定的な発言が増え、ミスが増える",
+        good: [
+          "結果を問う前に「大丈夫?」と気にかける",
+          "存在そのものへの感謝を先に伝える",
+          "改善点は、気持ちが落ち着いてから伝える"
+        ],
+        bad: [
+          "ミスをいきなり指摘する",
+          "他の人と比較して評価する",
+          "「気にしすぎ」と感じ方を否定する"
+        ]
+      },
+      {
+        level: "第三度(重度)",
+        desc: "涙もろくなる、仕事から距離を置き始める",
+        good: [
+          "評価や進捗の話を一旦脇に置き、本人の状態を優先する",
+          "安心して話せる1対1の時間を確保する",
+          "必要であれば専門家への相談を勧める"
+        ],
+        bad: [
+          "「大丈夫、大丈夫」と本人の状態を軽く流す",
+          "業務の遅れを責める",
+          "一人にして様子を見ないままにする"
+        ]
+      }
+    ],
+    caseStudy: "営業事務のBさんは周囲への気配りで評判だったが、繁忙期に入りミスが続くようになった。上司が最初に「ここ間違ってるよ、気をつけて」と伝えたところ、翌日から表情が暗くなり、さらにミスが増えた。方針を変え、まず「最近大変な中でも対応してくれてありがとう」と伝え、具体的に良かった対応を1つ挙げてから、「この部分だけ一緒に確認しようか」と改善点を提案する順番にしたところ、数日でミスの数は落ち着いた。"
+  },
+  thinker: {
+    name: "思考者(シンカー)",
+    color: "var(--c-thinker)",
+    need: "時間の構造化・仕事ぶりを認められること",
+    channel: "要求的(論理型)",
+    channelDetail: "シンカーには、感情論ではなく事実・データ・因果関係で筋道立てて話す「要求的」な伝え方が最も伝わる。抽象的な精神論は響きにくく、「何を・いつまでに・なぜ」を明確にすることが信頼につながる。評価も感覚ではなく具体的な根拠で伝える。",
+    channelExamples: [
+      "◯「先週のデータでは離脱率が3%増えています。原因を一緒に整理しましょう」",
+      "◯「この判断は根拠が明確で良かったです」",
+      "×「なんかいい感じで進めておいて」(曖昧な指示)",
+      "×「頑張ってるのは分かるから」(根拠のない感情的な評価)"
+    ],
+    strengths: "論理的な分析力、計画性、責任感の強さ。物事を体系立てて整理し、筋の通った判断ができる。",
+    role: "経営企画、プロジェクトマネジメント、品質管理、財務など計画性と論理性が求められる管理職・専門職に向きやすい。組織のルールや仕組みを整える役割を任せやすいが、根拠を示せない曖昧な指示のもとで動くことや、行き当たりばったりの意思決定が続く環境はストレスになりやすい。",
+    glasserNeed: "力・承認(達成による自己価値)",
+    qualityWorldQuestions: [
+      "自分の仕事ぶりが正しく評価されたと感じたのは、最近いつですか?",
+      "今の役割の中で、自分の判断力が発揮できていると感じる場面はありますか?"
+    ],
+    stages: [
+      {
+        level: "第一度(軽度)",
+        desc: "予定を細かく詰め込み、完璧主義的になる",
+        good: [
+          "スケジュールや優先順位を一緒に整理する",
+          "「この判断は的確だった」と根拠を添えて評価する",
+          "変更事項は理由とセットで説明する"
+        ],
+        bad: [
+          "「そんなに細かくしなくていい」と切り捨てる",
+          "説明なしに計画を変更する",
+          "感覚的な評価だけで済ませる"
+        ]
+      },
+      {
+        level: "第二度(中度)",
+        desc: "他者の仕事のやり方を過度にコントロールしようとする、細かい指摘が増える",
+        good: [
+          "役割分担と責任範囲を明文化して渡す",
+          "指摘の前に、状況の背景を確認し合う",
+          "データや事実をもとに冷静に対話する"
+        ],
+        bad: [
+          "感情的に「細かすぎる」と反論する",
+          "責任範囲を曖昧なままにする",
+          "正面から議論せず避けて通る"
+        ]
+      },
+      {
+        level: "第三度(重度)",
+        desc: "孤立してでも自分のやり方に固執し、周囲との軋轢が強まる",
+        good: [
+          "第三者を交えて、事実ベースで状況を整理する",
+          "本人の判断が評価されてきた実績を具体的に示す",
+          "必要であれば役割や業務量そのものを見直す"
+        ],
+        bad: [
+          "感情論で「もっと柔軟に」と求める",
+          "孤立を放置する",
+          "実績を無視して一方的に方針転換する"
+        ]
+      }
+    ],
+    caseStudy: "プロジェクトリーダーのCさんは元々計画的に仕事を進めるタイプだったが、仕様変更が続いた時期から、メンバーの作業手順を逐一チェックし始め、些細なミスにも強く指摘するようになった。上司は頭ごなしに注意するのではなく、まず変更後のスケジュールを一緒に整理し直し、「この判断は的確だった」と具体的な仕事ぶりを評価した。構造が見えたことで、Cさんの過干渉は落ち着いていった。"
+  },
+  persister: {
+    name: "信奉者(パーシスター)",
+    color: "var(--c-persister)",
+    need: "自分の考え・価値観を認められること",
+    channel: "要求的(価値観尊重型)",
+    channelDetail: "パーシスターは自分の意見・価値観をまず聞いてもらえたかどうかに敏感。結論を押し付ける前に、本人の考えを尋ね、正面から向き合う「要求的」な伝え方が信頼を生む。価値観そのものを軽視されたと感じると、一気に態度が硬化する。",
+    channelExamples: [
+      "◯「〇〇さんはこの方針についてどう考えていますか、まず聞かせてください」",
+      "◯「その姿勢が品質を守ってきたと思っています」",
+      "×「決まったことなので従ってください」(意見を聞かず一方的に伝える)",
+      "×「細かいことにこだわりすぎ」(価値観を軽視する)"
+    ],
+    strengths: "強い誠実さ、責任感、観察力。信念を持って仕事に取り組み、組織の理念や品質を守る役割を担いやすい。",
+    role: "品質保証、コンプライアンス、監査、企業理念の浸透を担う役割など、組織の価値観や基準を守る専門職・アドバイザー職に向きやすい。誠実さや信念が評価される環境で力を発揮しやすいが、価値観と相容れない方針を押し付けられたり、意見を求められないまま従うことだけを期待される役割はストレスになりやすい。",
+    glasserNeed: "力・承認、および価値観を共有する愛と所属",
+    qualityWorldQuestions: [
+      "自分の大切にしている価値観を、今の仕事の中で発揮できていますか?",
+      "自分の意見をきちんと聞いてもらえたと感じたのは、どんな時でしたか?"
+    ],
+    stages: [
+      {
+        level: "第一度(軽度)",
+        desc: "「正しくあらねば」と自分にも他人にも厳しくなる",
+        good: [
+          "本人の意見や価値観を先に尋ねる",
+          "誠実に取り組んでいる姿勢を具体的に認める",
+          "議論の前に共通の目的を確認する"
+        ],
+        bad: [
+          "意見を聞かずに結論だけ伝える",
+          "「厳しすぎる」と一方的に指摘する",
+          "価値観の話を軽く流す"
+        ]
+      },
+      {
+        level: "第二度(中度)",
+        desc: "他者の意見を批判し、独善的になる、自分の意見を曲げなくなる",
+        good: [
+          "反対意見の背景にある懸念をじっくり聞く",
+          "共通点から会話を始める",
+          "信念を尊重した上で、事実や別の視点を共有する"
+        ],
+        bad: [
+          "「屁理屈だ」と切り捨てる",
+          "力で押し切ろうとする",
+          "議論を避けて距離を置く"
+        ]
+      },
+      {
+        level: "第三度(重度)",
+        desc: "周囲から孤立してでも自分の正しさに固執する",
+        good: [
+          "信頼できる第三者を交えて対話の機会を作る",
+          "これまでの貢献や誠実さを具体的に振り返る",
+          "必要であれば少し距離を置く時間も認める"
+        ],
+        bad: [
+          "「頑固すぎる」と人格を否定する",
+          "孤立をそのまま放置する",
+          "無理に多数決で押し切る"
+        ]
+      }
+    ],
+    caseStudy: "品質管理担当のDさんは仕事への責任感が強く評価されていたが、新しい方針が導入された際、その方針を強く批判し、会議のたびに反対意見を述べるようになった。上司はまず「なぜその方針に懸念があるのか」をじっくり聞き、Dさんの品質への信念を認めた上で、新方針の意図を説明した。意見を頭ごなしに否定されなかったことで、Dさんは態度を軟化させ、建設的な提案に切り替わっていった。"
+  },
+  rebel: {
+    name: "反抗者(レベル)",
+    color: "var(--c-rebel)",
+    need: "遊び心のある関わり・接触",
+    channel: "遊び心のある",
+    channelDetail: "レベルは堅苦しいトーンだと距離を置きがちだが、軽いユーモアや遊びの要素を交えると心を開きやすい「遊び心のある」伝え方が刺さるタイプ。指示も「一緒に楽しみながらやろう」という空気を作ると受け取ってもらいやすい。",
+    channelExamples: [
+      "◯「このタスク、一番おもしろい案も混ぜて出してみて」",
+      "◯「ちょっと遊び感覚でいいから、3パターン考えてみない?」",
+      "×「手順通りに正確にやってください」(堅苦しいルール強調)",
+      "×真面目に説教する(皮肉に対して感情的に返す)"
+    ],
+    strengths: "自発的な発想力、場を明るくする力、変化への適応力。堅苦しい枠にとらわれず、新しいアイデアを生み出しやすい。",
+    role: "企画、クリエイティブ、新規事業開発など、既存の枠にとらわれない発想が求められる役割に向きやすい。変化や刺激のある環境で力を発揮しやすいが、単調なルーティンワークや、遊びの余地のない厳格な管理下に長期間置かれるとやる気を失いやすい。",
+    glasserNeed: "楽しみ",
+    qualityWorldQuestions: [
+      "最近、仕事の中で純粋に楽しいと感じた瞬間はありましたか?",
+      "遊び心を発揮できる場面は、今の仕事にどれくらいありますか?"
+    ],
+    stages: [
+      {
+        level: "第一度(軽度)",
+        desc: "単調な作業への不満をこぼす、集中力が落ちる",
+        good: [
+          "作業に少し変化や遊びの要素を加える",
+          "軽いユーモアを交えて話しかける",
+          "選択肢や裁量を持たせる"
+        ],
+        bad: [
+          "「文句を言わずにやって」と押し切る",
+          "堅苦しいルールをさらに増やす",
+          "真面目な説教で応じる"
+        ]
+      },
+      {
+        level: "第二度(中度)",
+        desc: "他者や状況のせいにする発言が増え、皮肉っぽくなる",
+        good: [
+          "皮肉を真に受けず、軽く受け流しながら本題に戻す",
+          "「一緒に面白くする方法を考えよう」と誘う",
+          "変化のある新しい役割を提案する"
+        ],
+        bad: [
+          "皮肉に感情的に言い返す",
+          "「責任転嫁するな」と正論で押さえつける",
+          "さらに単調な作業を割り当てる"
+        ]
+      },
+      {
+        level: "第三度(重度)",
+        desc: "投げやりな態度になり、仕事を放棄しかねない状態になる",
+        good: [
+          "一旦役割や環境を大きく変えてみる",
+          "軽い雑談から関係を立て直す",
+          "必要であれば専門家への相談も選択肢に入れる"
+        ],
+        bad: [
+          "「無責任だ」と厳しく叱責する",
+          "放置してそのままにする",
+          "さらに管理・監視を強める"
+        ]
+      }
+    ],
+    caseStudy: "デザイナーのEさんは普段明るくアイデア豊富だが、単調なレイアウト修正作業が続いた時期から「どうせ誰も見てないですし」と皮肉を言うようになった。上司は真面目に注意する代わりに、「じゃあこの3パターン、一番笑えるやつも混ぜて考えてみて」と遊びの余地を持たせた依頼に変えた。Eさんは冗談交じりに提案を出し始め、結果的に質の高い案が生まれた。"
+  },
+  promoter: {
+    name: "行動者(プロモーター)",
+    color: "var(--c-promoter)",
+    need: "刺激・興奮・挑戦",
+    channel: "要求的(簡潔型)",
+    channelDetail: "プロモーターは前置きの長い説明を嫌う。結論から先に、簡潔かつ直接的に伝える「要求的」な伝え方が最も響く。裁量を与え、スピード感のあるやり取りを心がけると、行動力が良い方向に発揮される。",
+    channelExamples: [
+      "◯「結論から言うと、このエリアを任せます。進め方は自由でいい」",
+      "◯「今日中に1点だけ決めてほしい。Aか B、どっち?」",
+      "×「まず背景から説明すると…」と長い前置きから入る",
+      "×手順を逐一細かく管理する"
+    ],
+    strengths: "高い行動力、説得力、変化への適応力。困難な状況でも即座に動き、結果を出すことにやりがいを感じる。",
+    role: "営業、新規開拓、危機対応、事業責任者など、スピードと決断力が求められる役割に向きやすい。裁量権のあるポジションで力を発揮しやすいが、変化のない単調な仕事や、常に細かく管理・報告を求められる環境は窮屈に感じやすい。",
+    glasserNeed: "楽しみ・自由",
+    qualityWorldQuestions: [
+      "最近、刺激的だと感じた挑戦や決断はありましたか?",
+      "自分の裁量で決められることは、今どれくらいありますか?"
+    ],
+    stages: [
+      {
+        level: "第一度(軽度)",
+        desc: "じっとしていられず、落ち着きがなくなる",
+        good: [
+          "新しい挑戦や短期的な目標を与える",
+          "結論から簡潔に伝える",
+          "裁量のある小さな決定を任せる"
+        ],
+        bad: [
+          "長い説明や前置きから入る",
+          "変化のない作業を淡々と割り振る",
+          "細かい手順を逐一指示する"
+        ]
+      },
+      {
+        level: "第二度(中度)",
+        desc: "衝動的な判断が増え、周囲を巻き込んで操作的な行動をとる",
+        good: [
+          "結果への期待と裁量を明確に伝え直す",
+          "報告のタイミングだけ簡潔に決める",
+          "スピード感のある対話で軌道修正する"
+        ],
+        bad: [
+          "細部まで管理を強めようとする",
+          "感情的に「勝手なことをするな」と叱る",
+          "長時間の会議で説明を重ねる"
+        ]
+      },
+      {
+        level: "第三度(重度)",
+        desc: "リスクの高い行動に走り、トラブルを引き起こしかねない",
+        good: [
+          "リスクの高い行動の背景にある不満を簡潔に確認する",
+          "新しい挑戦の機会を用意し、エネルギーの向け先を変える",
+          "必要であれば一時的に権限の範囲を調整する"
+        ],
+        bad: [
+          "行動を全面的に禁止し、裁量を奪う",
+          "長い説教で対応しようとする",
+          "問題を放置してエスカレートさせる"
+        ]
+      }
+    ],
+    caseStudy: "営業のFさんは行動力が評価されていたが、担当エリアが長期間変わらず、次第に独断で価格交渉を進めるなど、報告なしに動くことが増えた。上司は行動を制限するのではなく、「新規開拓エリアを1つ任せるので、動き方は任せます。結果だけ週1で簡潔に報告してください」と裁量と刺激を与える形に変えた。独断行動は減り、エネルギーは新規開拓に向かうようになった。"
+  }
+};
+
+/* ---------- Forced-choice question generation ---------- */
+const STATEMENT_VARIANTS = {
+  imaginer: [
+    "一人でじっくり考える時間があると落ち着く",
+    "指示が明確でないと、何から手をつけていいか迷う",
+    "大勢の中より、静かな環境の方が力を発揮できる"
+  ],
+  harmonizer: [
+    "人の気持ちを大切にしながら物事を進めたい",
+    "誰かの役に立てたと感じると、やる気が上がる",
+    "周囲との関係が良好かどうかが気になる"
+  ],
+  thinker: [
+    "物事は筋道立てて、順序よく進めたい",
+    "根拠やデータに基づいて判断したい",
+    "計画通りに進んでいるか、常に把握したい"
+  ],
+  persister: [
+    "自分の価値観に沿って正しく行動したい",
+    "納得できないことには、はっきり意見を言いたい",
+    "誠実さや責任感を大事にしている"
+  ],
+  rebel: [
+    "楽しい雰囲気の中で物事に取り組みたい",
+    "興味のあることには自然と夢中になれる",
+    "決まりきったやり方より、自由なやり方を好む"
+  ],
+  promoter: [
+    "スピード感を持って、すぐ行動に移したい",
+    "回りくどい説明より、結論から聞きたい",
+    "刺激的な挑戦や変化があるとやる気が出る"
+  ]
+};
+const VARIANT_COUNT = 3;
+
+function generatePairs() {
+  const keys = Object.keys(STATEMENT_VARIANTS);
+  const pairs = [];
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = i + 1; j < keys.length; j++) {
+      for (let v = 0; v < VARIANT_COUNT; v++) {
+        const swap = Math.random() < 0.5;
+        const left  = swap ? keys[j] : keys[i];
+        const right = swap ? keys[i] : keys[j];
+        pairs.push({ left, right, variant: v });
+      }
+    }
+  }
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  return pairs;
+}
+
+// each type appears against 5 other types x 3 variants = 15 times
+const PER_TYPE_MAX = (Object.keys(STATEMENT_VARIANTS).length - 1) * VARIANT_COUNT;
+
+let QUESTIONS = generatePairs();
+let current = 0;
+let answers = new Array(QUESTIONS.length).fill(null);
+let showResult = false;
+let userName = "";
+
+function syncReportMeta(value) {
+  userName = value;
+  const printName = document.getElementById("printName");
+  if (printName) printName.textContent = value || "未記入";
+}
+
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = showResult ? renderResult() : renderQuiz();
+}
+
+function renderQuiz() {
+  const q = QUESTIONS[current];
+  const pct = Math.round((current / QUESTIONS.length) * 100);
+  const selected = answers[current];
+
+  const optionCard = (key) => `
+    <button class="option-card ${selected === key ? 'chosen' : ''}" onclick="selectAnswer('${key}')">
+      ${STATEMENT_VARIANTS[key][q.variant]}
+    </button>
+  `;
+
+  return `
+    <h1>コミュニケーションタイプ診断</h1>
+    <p class="lede">より近いと感じる方を選んでください(強制選択式・全${QUESTIONS.length}問)</p>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="card">
+      <div class="q-count">質問 ${current + 1} / ${QUESTIONS.length}</div>
+      <div class="q-text">どちらがより自分に近いですか?</div>
+      <div class="options">
+        ${optionCard(q.left)}
+        <div class="or-label">または</div>
+        ${optionCard(q.right)}
+      </div>
+      <div class="nav">
+        <button onclick="prevQ()" ${current === 0 ? "disabled" : ""}>← 戻る</button>
+        <button onclick="nextQ()" ${selected === null ? "disabled" : ""}>${current === QUESTIONS.length - 1 ? "結果を見る →" : "次へ →"}</button>
+      </div>
+    </div>
+  `;
+}
+
+function selectAnswer(key) {
+  answers[current] = key;
+  render();
+}
+
+function nextQ() {
+  if (answers[current] === null) return;
+  if (current === QUESTIONS.length - 1) {
+    showResult = true;
+  } else {
+    current++;
+  }
+  render();
+}
+
+function prevQ() {
+  if (current > 0) {
+    current--;
+    render();
+  }
+}
+
+function computeScores() {
+  const scores = {};
+  Object.keys(STATEMENT_VARIANTS).forEach(t => scores[t] = 0);
+  answers.forEach(chosenKey => {
+    if (chosenKey) scores[chosenKey] += 1;
+  });
+  return scores;
+}
+
+function computeConsistency() {
+  const groups = {};
+  QUESTIONS.forEach((q, i) => {
+    const combo = [q.left, q.right].sort().join("_");
+    if (!groups[combo]) groups[combo] = [];
+    groups[combo].push(answers[i]);
+  });
+  let consistentCount = 0;
+  const comboKeys = Object.keys(groups);
+  const inconsistentCombos = [];
+  comboKeys.forEach(combo => {
+    const arr = groups[combo];
+    const allSame = arr.every(a => a === arr[0]);
+    if (allSame) {
+      consistentCount++;
+    } else {
+      inconsistentCombos.push(combo.split("_").map(k => TYPES[k].name.split("(")[0]).join(" と "));
+    }
+  });
+  const total = comboKeys.length;
+  const pct = Math.round((consistentCount / total) * 100);
+  return { consistentCount, total, pct, inconsistentCombos };
+}
+
+function renderResult() {
+  const scores = computeScores();
+  const consistency = computeConsistency();
+  const maxScore = PER_TYPE_MAX;
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const topKey = sorted[0][0];
+
+  const bars = sorted.map(([key, val]) => {
+    const t = TYPES[key];
+    const pct = Math.round((val / maxScore) * 100);
+    const isTop = key === topKey;
+    return `
+      <div class="bar-row">
+        <div class="bar-label ${isTop ? 'top' : ''}">${t.name.split("(")[0]}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${t.color};"></div></div>
+        <div class="bar-val">${val}</div>
+      </div>
+    `;
+  }).join("");
+
+  const top = TYPES[topKey];
+
+  let consistencyMsg;
+  if (consistency.pct >= 80) {
+    consistencyMsg = "回答が一貫しており、比較的安定した傾向と考えられます。";
+  } else if (consistency.pct >= 50) {
+    consistencyMsg = "一定の一貫性はありますが、言い回しによって選ぶタイプに幅がありました。";
+  } else {
+    consistencyMsg = "回答にばらつきが大きく、今回の結果は一時的な状態や気分を反映している可能性があります。時間を置いて再診断することをおすすめします。";
+  }
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+
+  return `
+    <p class="lede" style="margin-bottom:6px;">診断結果</p>
+    <h2 class="result-title">${top.name}</h2>
+    <p class="result-sub">2択で選んだ回答(全${QUESTIONS.length}問)から算出した傾向です(タイプは誰でも複数の要素を併せ持ちます)。以下、全6タイプの詳細を強い順に表示しています。<br><span style="opacity:0.8;">※このアプリの1位は「今その瞬間に選びやすい傾向」であり、公式アセスメントが区別する生涯不変の「ベース」タイプとは異なります。</span></p>
+
+    <div class="report-meta">
+      <label>氏名: <input type="text" id="userNameInput" placeholder="山田 太郎" value="${userName.replace(/"/g, '&quot;')}" oninput="syncReportMeta(this.value)"></label>
+      <div>診断日: ${dateStr}</div>
+      <div class="print-only-meta">氏名: <span id="printName">${userName || "未記入"}</span> ／ 診断日: ${dateStr}</div>
+    </div>
+
+    <div class="report-actions">
+      <button onclick="window.print()">🖨️ 印刷 / PDFで保存</button>
+      <button onclick="downloadTextReport()">📄 テキストで保存</button>
+    </div>
+
+    <div class="detail-card" style="--accent: var(--text);">
+      <h3>回答の一貫性(内的一貫性チェック)</h3>
+      <div class="tag">同じ組み合わせを3つの異なる言い回しで聞き、毎回同じ方を選んだ割合</div>
+      <div class="bar-row" style="grid-template-columns: 1fr 50px;">
+        <div class="bar-track"><div class="bar-fill" style="width:${consistency.pct}%; background: var(--text);"></div></div>
+        <div class="bar-val">${consistency.pct}%</div>
+      </div>
+      <p class="role-block" style="margin-top:10px;">${consistency.consistentCount} / ${consistency.total} 組み合わせで一貫した回答でした。${consistencyMsg}</p>
+      ${consistency.inconsistentCombos.length > 0 ? `
+        <p class="stage-sub">選ぶ方が割れた組み合わせ</p>
+        <ul class="detail-list dont">${consistency.inconsistentCombos.map(c => `<li>${c}</li>`).join("")}</ul>
+      ` : ""}
+      <p class="role-note">これは公式アセスメントが用いる「信頼性」の考え方(同じ内容を別の表現で繰り返し尋ねて回答の安定性を見る)を簡易的に取り入れたものです。ただし正式な統計的検証(大規模サンプルでの因子分析等)を経たものではありません。</p>
+    </div>
+
+    <div class="bars">${bars}</div>
+
+    ${sorted.map(([key]) => {
+      const t = TYPES[key];
+      return `
+      <div class="detail-card" style="--accent:${t.color}">
+        <h3>${t.name}</h3>
+        <div class="tag">傾向の強さ: ${scores[key]} / ${maxScore}</div>
+
+        <dl>
+          <dt>強み</dt><dd>${t.strengths}</dd>
+          <dt>求める心理的欲求</dt><dd>${t.need}</dd>
+        </dl>
+
+        <p class="section-label">伝わりやすい関わり方: ${t.channel}</p>
+        <p class="channel-detail">${t.channelDetail}</p>
+        <ul class="detail-list example">
+          ${t.channelExamples.map(s => `<li>${s}</li>`).join("")}
+        </ul>
+
+        <p class="section-label">組織における適正な職位・役割</p>
+        <p class="role-block">${t.role}</p>
+        <p class="role-note">※職位や配属を固定する根拠ではなく、力を発揮しやすい傾向として参考にしてください。</p>
+
+        <p class="section-label">満たされやすい基本的欲求 & 対話のきっかけ</p>
+        <p class="role-block">主に満たされやすい欲求: <strong>${t.glasserNeed}</strong></p>
+        <p class="stage-sub">上質世界を問いかける質問(1on1などでそのまま使えます)</p>
+        <ul class="detail-list">
+          ${t.qualityWorldQuestions.map(q => `<li>${q}</li>`).join("")}
+        </ul>
+        <p class="role-note">※これはウィリアム・グラッサーの選択理論(5つの基本的欲求・上質世界)とPCMを概念的に橋渡しした試験的な整理です。両理論が公式に統合されているわけではありません。</p>
+
+        <p class="section-label">ストレス反応の3段階と関わり方</p>
+        ${t.stages.map(stage => `
+          <div class="stage-block">
+            <div class="stage-title">${stage.level}</div>
+            <div class="stage-desc">${stage.desc}</div>
+            <div class="stage-sub">してみるとよいこと</div>
+            <ul class="detail-list do">${stage.good.map(s => `<li>${s}</li>`).join("")}</ul>
+            <div class="stage-sub">避けたいこと</div>
+            <ul class="detail-list dont">${stage.bad.map(s => `<li>${s}</li>`).join("")}</ul>
+          </div>
+        `).join("")}
+
+        <p class="section-label">事例</p>
+        <p class="case-study">${t.caseStudy}</p>
+      </div>
+      `;
+    }).join("")}
+
+    <button class="restart" onclick="restart()">もう一度診断する</button>
+  `;
+}
+
+function restart() {
+  QUESTIONS = generatePairs();
+  answers = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  showResult = false;
+  render();
+}
+
+function downloadTextReport() {
+  const scores = computeScores();
+  const consistency = computeConsistency();
+  const maxScore = PER_TYPE_MAX;
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const top = TYPES[sorted[0][0]];
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+
+  let lines = [];
+  lines.push("========================================");
+  lines.push("コミュニケーションタイプ診断レポート");
+  lines.push(`氏名: ${userName || "未記入"}`);
+  lines.push(`診断日: ${dateStr}`);
+  lines.push("========================================");
+  lines.push("");
+  lines.push(`最も傾向が強いタイプ: ${top.name}`);
+  lines.push("");
+  lines.push("--- 6タイプのスコア(強い順) ---");
+  sorted.forEach(([key, val]) => {
+    lines.push(`${TYPES[key].name}: ${val} / ${maxScore}`);
+  });
+  lines.push("");
+  lines.push("--- 回答の一貫性(内的一貫性チェック) ---");
+  lines.push(`${consistency.consistentCount} / ${consistency.total} 組み合わせで一貫した回答 (${consistency.pct}%)`);
+  if (consistency.inconsistentCombos.length > 0) {
+    lines.push("選ぶ方が割れた組み合わせ:");
+    consistency.inconsistentCombos.forEach(c => lines.push(`  - ${c}`));
+  }
+  lines.push("");
+  lines.push("注記: これは簡易的な自己診断ツールであり、統計的検証を経た正式なアセスメントではありません。");
+  lines.push("人事評価・配置・採用など重みのある意思決定には、公式のPCM認定トレーナーによるアセスメントをご利用ください。");
+  lines.push("");
+
+  sorted.forEach(([key, val]) => {
+    const t = TYPES[key];
+    lines.push("========================================");
+    lines.push(`${t.name} (スコア ${val} / ${maxScore})`);
+    lines.push("========================================");
+    lines.push("");
+    lines.push(`[強み]`);
+    lines.push(t.strengths);
+    lines.push("");
+    lines.push(`[求める心理的欲求]`);
+    lines.push(t.need);
+    lines.push("");
+    lines.push(`[伝わりやすい関わり方: ${t.channel}]`);
+    lines.push(t.channelDetail);
+    t.channelExamples.forEach(e => lines.push(`  ${e}`));
+    lines.push("");
+    lines.push(`[組織における適正な職位・役割]`);
+    lines.push(t.role);
+    lines.push("");
+    lines.push(`[満たされやすい基本的欲求 & 対話のきっかけ(グラッサー選択理論との橋渡し・試験的整理)]`);
+    lines.push(`主に満たされやすい欲求: ${t.glasserNeed}`);
+    lines.push("上質世界を問いかける質問:");
+    t.qualityWorldQuestions.forEach(q => lines.push(`  - ${q}`));
+    lines.push("");
+    lines.push(`[ストレス反応の3段階]`);
+    t.stages.forEach(stage => {
+      lines.push(`  ${stage.level}: ${stage.desc}`);
+      lines.push(`    してみるとよいこと:`);
+      stage.good.forEach(g => lines.push(`      - ${g}`));
+      lines.push(`    避けたいこと:`);
+      stage.bad.forEach(b => lines.push(`      - ${b}`));
+    });
+    lines.push("");
+    lines.push(`[事例]`);
+    lines.push(t.caseStudy);
+    lines.push("");
+  });
+
+  const text = lines.join("\n");
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `pcm-diagnosis-report-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+render();
+</script>
+</body>
+</html>
